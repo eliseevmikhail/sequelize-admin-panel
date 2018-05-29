@@ -1,0 +1,21 @@
+extends ../../src/views/layout.pug
+
+block content
+  nav.navbar.navbar-expand-sm.justify-content-between.bg-dark.navbar-dark.sticky-top
+    a.btn.navbar-brand.mx-0(href=req.SA.queryExtender([], {}, false))
+      span.oi.oi-home
+    include ../../src/views/parts/logoutLink.pug
+  canvas(id="myChart", width="200", height="200")
+  script.
+    var ctx = document.getElementById("myChart").getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: !{labels},
+            datasets: [{
+                label: '# of Votes',
+                data: !{counts},
+                backgroundColor: !{colors}
+            }]
+        },
+    });

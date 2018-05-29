@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: middleware/extend-request.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: middleware/extend-request.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const url = require('url')
+const ModelAdminManager = require('../ModelAdminManager')
+const l10n = require('../l10n')
+const { checkPermission, PERMISSION } = require('../userSession')
+
+/**
+ * @namespace req.SA
+ * @description Available as req.SA everywhere
+ * @prop {Object} sequelizeInstance Sequelize instance
+ * @prop {Sequelize} Sequelize sequelize constructor
+ * @prop {Object} modelAdminManager ModelAdminManager instance
+ * @prop {String} modelName current model name from url
+ * @prop {Object} modelAdminInstance ModelAdmin instance for current model
+ * @prop {Object} PERMISSION user session permissions
+ * @prop {Object} utils {@link req.SA.utils}
+ */
+
+/**
+ *  @namespace req.SA.utils
+ */
+
+/**
+ * Covert any value to one-element array, null to []
+ * @method req.SA.utils.toArray
+ * @param {*} value
+ * @returns {Array}
+ */
+
+/**
+ * Ellipsize string to some length, add ...
+ * @method req.SA.utils.clip
+ * @param {String} str
+ * @param {Number} len
+ * @returns {String}
+ */
+
+/**
+ * Translates message
+ * @method req.SA.tr
+ * @param {String} message
+ * @param {String} default
+ * @returns {String}
+ */
+
+/**
+ * Translates model name
+ * @method req.SA.trModel
+ * @param {ModelAdmin} modelAdmin
+ * @returns {Object} { label, plural, hint}
+ */
+
+/**
+ * Translates field name
+ * @method req.SA.trField
+ * @param {String} modelName
+ * @param {String} fieldName
+ * @param {String} default
+ * @returns {String}
+ */
+
+/**
+ * Translates action name
+ * @method req.SA.trAction
+ * @param {String} actionName
+ * @param {String} default
+ * @returns {String}
+ */
+
+/**
+ * Get ValidationError
+ * @method req.SA.getSequelizeError
+ * @param {String} type error type
+ * @param {String} fieldName field name on which error occured
+ * @throws {Sequelize.ValidationError}
+ */
+
+/**
+ * Check user permission
+ * @method req.SA.checkPermission
+ * @param {Express.Request} req
+ * @param {Number} action
+ * @param {String} modelName
+ * @returns {Boolean}
+ */
+
+module.exports = function extendRequestMiddlewareBuilder(
+  sequelizeInstance,
+  modelAdmins,
+  translation
+) {
+  const modelAdminManager = new ModelAdminManager(
+      sequelizeInstance,
+      modelAdmins
+    ),
+    Sequelize = sequelizeInstance.constructor
+
+  return (req, res, next) => {
+    const modelName = url.parse(req.url, true).pathname.split('/')[2],
+      modelAdminInstance = modelName
+        ? modelAdminManager.getModelAdminByModelName(modelName)
+        : undefined
+    req.SA = Object.assign(req.SA || {}, {
+      modelAdminManager,
+      Sequelize,
+      sequelizeInstance,
+      modelName,
+      modelAdminInstance,
+      trModel: l10n.trModelFactory(req, translation),
+      trField: l10n.trFieldFactory(req, translation),
+      trAction: l10n.trActionFactory(req, translation),
+      tr: l10n.trFactory(req, translation),
+      checkPermission,
+      getSequelizeError: (type, fieldName) => {
+        return new req.SA.Sequelize.ValidationError(null, [
+          new req.SA.Sequelize.ValidationErrorItem(
+            `Validation ${type} on ${fieldName} failed`,
+            null,
+            fieldName
+          )
+        ])
+      },
+      PERMISSION,
+      utils: {
+        toArray: data =>
+          data === undefined || data === null
+            ? []
+            : data instanceof Array
+              ? data
+              : [data],
+        clip: (str, len = 100) => {
+          str = str.trim().replace(/\s+/g, ' ')
+          return str.length > len ? str.substr(0, len) + '…' : str
+        }
+      }
+    })
+    next()
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-cli.html">cli</a></li><li><a href="module-sequelize-admin.html">sequelize-admin</a></li></ul><h3>Classes</h3><ul><li><a href="ModelAdmin.html">ModelAdmin</a></li><li><a href="ModelAdminManager.html">ModelAdminManager</a></li></ul><h3>Namespaces</h3><ul><li><a href="req.html">req</a></li><li><a href="req.SA.html">SA</a></li><li><a href="req.SA.utils.html">utils</a></li><li><a href="res.html">res</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue May 29 2018 16:25:38 GMT+0700 (+07)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

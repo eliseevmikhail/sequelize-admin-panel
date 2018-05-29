@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h1>Sequelize admin panel</h1><h2>TL;DR</h2><p>Скачайте архив, в корне запустите</p>
+<pre class="prettyprint source lang-sh"><code>yarn install && cd demo && yarn install && yarn initdb && yarn start</code></pre><p>и откройте <code>localhost:3000</code></p>
+<h2>Основные возможности</h2><h3>Простая настройка</h3><ul>
+<li>Просто подключите sequelizeAdmin как middleware по требуемому пути</li>
+<li>В минимальной конфигурации достаточно передать экземпляр sequelize для получения рабочей админ-панели</li>
+<li>Исходные модели не требуют модификации. Все дополнительные данные находятся в наследниках класса ModelAdmin</li>
+</ul>
+<h3>Настройка поведения полей</h3><p>Возможно переопределение функций рендеринга полей моделей в списке записей и на экране редактирования записи</p>
+<h3>Поддержка типов и отношений</h3><p>Поддерживается большинство примитивных типов Sequelize и все отношения (associations)</p>
+<h3>Пользователи и права</h3><p>Встроенное управление пользователями и правами доступа на таблицы</p>
+<h3>Локализация</h3><p>Все переводы, включая сообщения, названия моделей, полей и действий передаются в едином объекте, разбитом по локалям. Система определяет нужную локаль по заголовкам браузера. В случае отсутствия перевода используется встроенный английский для сообщений или название модели или поля для моделей и полей соответственно.</p>
+<h2>Быстрый старт</h2><p>Создайте проект</p>
+<pre class="prettyprint source lang-sh"><code>mkdir sequelize-admin-demo; cd sequelize-admin-demo
+yarn init
+yarn add express sequelize sequelize-cli
+yarn add mysql2 # или другой адаптер
+node node_modules/.bin/sequelize init</code></pre><p>отредактируйте <code>config/config.json</code> для подключения к вашей базе данных, рекомендуется сразу добавить
+<code>&quot;define&quot;: {&quot;charset&quot;: &quot;utf8&quot;, &quot;collate&quot;: &quot;utf8_general_ci&quot;}</code>, создайте БД</p>
+<pre class="prettyprint source lang-sh"><code>node node_modules/.bin/sequelize db:create</code></pre><p>Создайте главный файл проекта <code>index.js</code></p>
+<pre class="prettyprint source lang-js"><code>const express = require('express')
+const db = require('./models')
+const { sequelizeAdmin } = require('sequelize-admin')
+const app = express()
+app.use('/admin', sequelizeAdmin(express, db.sequelize))
+app.listen(process.env.PORT || 3000, () => console.log('Server started'))</code></pre><p>создайте файл <code>cli.js</code></p>
+<pre class="prettyprint source lang-js"><code>const db = require('./models')
+require('sequelize-admin').cli(db.sequelize)</code></pre><p>обратите внимание, такая форма запуска работает потому что созданный по умолчанию файл ./models подключает все модели. Если вы не используете <code>sequelize-cli</code>, убедитесь что нужные модели импортированы (вызван Sequelize.define).</p>
+<p>Создайте и синхронизируйте модели с помощью <code>sequelize-cli</code></p>
+<pre class="prettyprint source lang-sh"><code>node node_modules/.bin/sequelize model:generate --name MyModel --attributes name:STRING,count:INTEGER
+node node_modules/.bin/sequelize db:migrate
+node ./cli init # инициализация таблицы пользователей</code></pre><p>либо, если вы не хотите пользоваться sequelize migration, вручную создайте в каталоге models файлы моделей в соответствии с шаблоном:</p>
+<pre class="prettyprint source lang-js"><code>module.exports = (sequelize, DataTypes) => {
+  const MyModel = sequelize.define(
+    'MyModel',
+    {
+      // &lt;--- имя модели
+      name: DataTypes.STRING,
+      count: DataTypes.INTEGER
+    },
+    {}
+  )
+  MyModel.associate = function(models) {
+    // associations can be defined here
+    // like this: MyModel.belongsTo(models.OtherModel)
+  }
+  return MyModel
+}</code></pre><p>и синхронизируйте модели вызовом</p>
+<pre class="prettyprint source lang-sh"><code>node ./cli init --all # очистит все данные!</code></pre><p>Недостатком первого способа является необходимость ручного описания изменений схем таблиц в файлах миграции, второго -- сброс содержимого базы данных при переинициализации. Подробнее о работе с sequelizejs <a href="http://docs.sequelizejs.com/">по ссылке</a>.</p>
+<p><strong>Примечание:</strong> попытка использовать Sequelize.sync({alter: true}) может приводить к дубликации constraints</p>
+<p>Запустите сервер <code>node .</code> и откройте в браузере <code>http://localhost:3000/admin</code>. Готово!</p>
+<h2>Настройка представлений</h2><p>Для настройки представления полей модели создайте наследника класса <code>ModelAdmin</code>, в функции <code>init</code> задайте требуемые значения, а затем передайте пару <code>[MyModel,MyModelAdmin]</code> в функцию <code>sequelizeAdmin</code> свойством <code>models</code> третьего аргумента.</p>
+<p><code>MyModelAdmin.js</code>:</p>
+<pre class="prettyprint source lang-js"><code>const { ModelAdmin } = require('sequelize-admin')
+
+class MyModelAdmin extends ModelAdmin {
+  repr(req, entry) {
+    return entry.name
+  }
+
+  init() {
+    super.init()
+    this.list_fields = ['id', 'name', 'count', 'nonExistedField']
+    this.list_links = ['id']
+    this.search_fields = ['name', 'count']
+    this.ordering = ['count', '-name']
+    this.list_per_page = 20
+    this.editor_fields = ['id', 'name', 'count']
+    this.readonly_fields = ['id']
+    this.icon = '&lt;span class=&quot;oi oi-media-play&quot;>&lt;/span>'
+
+    this.setFieldDescription('name', {
+      view: (req, entry, fieldName) => {
+        return 'I love ' + entry.name + '!'
+      },
+      html: false
+    })
+
+    this.setFieldDescription('count', {
+      // можно и Promise
+      view: (req, entry, fieldName) => {
+        const model = req.SA.modelAdminInstance.model,
+          Sequelize = req.SA.Sequelize
+        // другие модели доступны через req.SA.modelAdminManager.getModelAdminByModelName('model_name').model
+        return (
+          model
+            .find({
+              // получаем максимальное
+              attributes: [
+                [Sequelize.fn('max', Sequelize.col('count')), 'max_count']
+              ]
+            })
+            // простое экранирование
+            .then(entry => parseInt(entry.get('max_count'), 10))
+            .then(max => `&lt;progress value=&quot;${entry.count}&quot; max=&quot;${max}&quot;>`)
+        )
+      },
+      html: true // осторожно -- вывод не экранируется
+    })
+
+    // можно создать сколько угодно псевдо-полей
+    this.setFieldDescription('nonExistedField', {
+      view: (req, entry, fieldName) => {
+        return entry.name.toUpperCase() + ' is great!'
+      }
+    })
+  }
+}
+module.exports = MyModelAdmin</code></pre><p><code>index.js</code>:</p>
+<pre class="prettyprint source lang-js"><code>...
+app.use('/admin', sequelizeAdmin(express, db.sequelize, {
+  models: [ [db.MyModel, require('./MyModelAdmin')] ]
+}))
+...</code></pre><p>В результате поле <code>name</code> будет признаваться в любви, <code>count</code> показывать progressbar относительно наибольшего в таблице значения, а третье поле, отсутсвующее в таблице, заниматься восхвалением.</p>
+<p>Рассмотрим по пунктам:</p>
+<ul>
+<li>Функция <code>repr</code> создаёт представление записи модели (строки таблицы). Оно используется в таблице результатов если не заданы поля в <code>list_fields</code>, а также для создания списков отношений. Обрабатывается как plain-text, можно возвращать Promise.</li>
+<li>Свойства <code>list_fields</code>, <code>list_links</code>, <code>search_fields</code>, <code>ordering</code> задают соответственно какие поля будут видны в таблице результатов, какие из них являются ссылками, по каким осуществляется поиск и сортировка по умолчанию (в том числе в списках отношений). Надо отметить, что поиск и сортировка возможна только по примитивных типам, присутствующим в базе (т.е. не по associations и не по искусственным полям).</li>
+<li>Если нужно вывести все поля кроме указанных, перечислите их в <code>list_exclude</code>. Если нужно вывести вообще все поля, укажите в <code>list_exclude</code> несуществующее поле. <code>list_fields</code> при этом должно быть пустым.</li>
+<li>В <code>list_fields</code> можно указать несуществующее поле, а затем описать его представление.</li>
+<li>В <code>icon</code> можно указать произвольный html, рекомендуется иконочный шрифт.</li>
+</ul>
+<p>Далее, вызовом <code>setFieldDescription</code> мы переопределяем функцию рендеринга представления поля строки таблицы и указываем, следует ли её вывод интерпретировать как html. Не забывайте об экранировании.</p>
+<p>Легко заметить, что каждый вызов <code>view</code> делает одну и ту же работу по вычислению максимального значения. Правильным решением будет вынести её в специальный коллбэк <code>beforeListRender</code>. Обратите внимание, возвращаемое значение передаётся как свойство объекта req:</p>
+<pre class="prettyprint source lang-js"><code>class MyModelAdmin extends ModelAdmin {
+...
+  beforeListRender(req, count, entries) {
+    const model = req.SA.modelAdminInstance.model,
+      Sequelize = req.SA.Sequelize
+    return model.find({
+        // получаем максимальное
+        attributes: [
+          [Sequelize.fn('max', Sequelize.col('count')), 'max_count']
+        ]
+      })
+      // простое экранирование и кэширование
+      .then(entry => req.MAX = parseInt(entry.get('max_count'), 10))
+  }
+...
+  init() {
+    ...
+    this.setFieldDescription('count', {
+      view: (req, entry, fieldName) =>
+        `&lt;progress value=&quot;${entry.count}&quot; max=&quot;${req.MAX}&quot;>`,
+      html: true
+    })
+    ...
+  }</code></pre><h2>Настройка виджетов</h2><p>Функции <code>setFieldDescription</code> можно передать свойство <code>widget</code>, в котором указать функцию рендеринга виджета с сигнатурой <code>(req, entry, fieldName, value, options)</code> и возвращающей html-код виджета.</p>
+<p>Например, напишем виждет для поля <code>count</code> в форме ползунка</p>
+<pre class="prettyprint source lang-js"><code>    this.setFieldDescription('count', {
+      ...
+      widget: (req, entry, fieldName, value, options) =>
+      `&lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;100&quot; step=&quot;1&quot;
+        class=&quot;form-control&quot;
+        ${options.readOnly ? 'disabled' : ''}
+        name=${fieldName}
+        value=${value} />`
+    })</code></pre><p>Обратите внимание, нужно обязательно указать <code>name=fieldName</code>, желательно установить текущее значение <code>value</code> и флаг <code>readonly</code>. Класс <code>form-control</code> из <code>bootstrap</code> растягивает виджет по ширине и в общем случае не обязателен.</p>
+<p>Если виджет сложнее поля ввода, следует создать скрытый <code>input</code> и помещать в него актуальное значение на клиентской стороне. Например, пусть поле <code>point</code> определено следующим образом:</p>
+<pre class="prettyprint source lang-js"><code>point: {
+  type: DataTypes.STRING,
+  allowNull: false,
+  defaultValue: '55.75027920193085,37.622483042183035',
+}</code></pre><p>тогда виджет с яндекс-картой можно описать так:</p>
+<pre class="prettyprint source lang-js"><code>widget: (req, entry, fieldName, value) => {
+  return `
+      &lt;!-- hidden form field -->
+      &lt;input type=hidden name=&quot;${fieldName}&quot; value=${value} />
+      &lt;div style='width: 100%; height: 240px; border: solid black 1px' id=&quot;${fieldName}_mapid&quot;>&lt;/div>
+      &lt;script>
+        function ${fieldName}_map() {
+          var coord = '${value}'.split(',')
+          var map = new ymaps.Map(&quot;${fieldName}_mapid&quot;, {
+            center: coord, 
+            zoom: 7
+          });
+          var placemark = new ymaps.Placemark(coord);
+          map.events.add('click', function (e) {
+            var coords = e.get('coords');
+            placemark.geometry.setCoordinates(coords);
+            // setup hidden form field
+            document.getElementsByName(&quot;${fieldName}&quot;)[0].value=coords.join(',')
+          });
+          map.geoObjects.add(placemark);
+        }
+        ymaps.ready(${fieldName}_map);
+      &lt;/script>`
+}</code></pre><p>Чтобы подключить библиотеку яндекс карт в методе <code>init</code> вызовите</p>
+<pre class="prettyprint source lang-js"><code>this.addExtraResource(
+  '&lt;script src=&quot;https://api-maps.yandex.ru/2.1/?lang=ru_RU&quot; type=&quot;text/javascript&quot;>&lt;/script>'
+)</code></pre><p>либо</p>
+<pre class="prettyprint source lang-js"><code>// js в конце необходим парсеру
+this.addExtraResource('https://api-maps.yandex.ru/2.1/?lang=ru_RU#js')</code></pre><p>Теперь при любом нажатии на карту сериализованные координаты попадают в скрытый <code>input</code>, и передаются при сохранении на сервер с корректным именем поля. Отдельно стоит отметить, что при создании любых <code>id</code> лучше генерировать его с участием имени поля (<code>${fieldName}_mapid</code>) во избежание коллизий.</p>
+<h2>Настройка сеттеров</h2><p>При сохранении записи модели каждое её поле сохраняется сеттером в соответствии с её типом. Переопределить функцию сохранения можно с помощью свойтства <code>setter</code> методов <code>addFieldsDescriptions</code> и <code>setFieldDescription</code>. В случае примитивного поля, сеттер по умолчанию выглядит так:</p>
+<pre class="prettyprint source lang-js"><code>function defaultSetter(req, entry, fieldName, transaction) {
+  entry[fieldName] = req.body[fieldName]
+}</code></pre><p>Так же может возвращать <code>Promise</code>. В сеттере можно поместить дополнительную проверку:</p>
+<pre class="prettyprint source lang-js"><code>function setter(req, entry, fieldName, transaction) {
+  if (req.body[fieldName] % 10 === 0) entry[fieldName] = req.body[fieldName]
+  else throw req.SA.getSequelizeError('multiples of ten', fieldName)
+}</code></pre><h2>Глобальные переопределения</h2><p>Можно создать промежуточного наследника класса <code>ModelAdmin</code>, в котором переопределить функции рендеринга и сеттер для различных типов, в том числе несуществующих. А затем ссылаться на имена этих типов вместо определения функций в свойствах <code>view</code>, <code>widget</code> и <code>setter</code> методов <code>addFieldsDescriptions</code> и <code>setFieldDescription</code>:</p>
+<pre class="prettyprint source lang-js"><code>class CustomTypes extends ModelAdmin {
+  init() {
+    super.init()
+    this.overrideTypeView('X_FILEBLOB', (req, entry, fieldName) => {
+      return entry[fieldName]
+        ? req.SA.tr('File size:') + entry[fieldName].length
+        : req.SA.tr('No file')
+    })
+    this.overrideTypeWidget(
+      'X_FILEBLOB',
+      (req, entry, fieldName, value, options) => {
+        return `&lt;input type=&quot;file&quot; class=&quot;form-control&quot; ${
+          options.readOnly ? 'disabled' : ''
+        } name=&quot;${fieldName}&quot; />`
+      }
+    )
+    this.overrideTypeSetter(
+      'X_FILEBLOB',
+      (req, entry, fieldName, transaction) => {
+        return new Promise((resolve, reject) => {
+          const file = req.files[fieldName]
+          if (file.size > 1048576)
+            reject(req.SA.getSequelizeError('file length', fieldName))
+          fs.readFile(file.path, (err, buf) => {
+            if (err) reject(err)
+            else {
+              entry[fieldName] = buf
+              resolve()
+            }
+          })
+        })
+      }
+    )
+  }
+}
+
+class OverridedAdmin extends CustomTypes {
+  init() {
+    super.init()
+    this.addFieldDescriptions({
+      file: {
+        view: 'X_FILEBLOB',
+        widget: 'X_FILEBLOB',
+        setter: 'X_FILEBLOB'
+      }
+    })
+  }
+}</code></pre><h2>Действия (actions)</h2><p>Для массовой обработки результатов в таблице записей вы можете задать action.</p>
+<p>Для этого передайте массив действий в свойство <code>ModelAdmin.actions</code>. Допустим, мы хотим иметь возможность обнулять поле <code>count</code></p>
+<pre class="prettyprint source lang-js"><code>this.actions = [
+  {
+    name: 'zerofy',
+    renderer: (req, res, modelAdmin, ids, exit) => {
+      let transaction
+      return req.SA.sequelizeInstance
+        .transaction()
+        .then(_transaction => (transaction = _transaction))
+        .then(() =>
+          modelAdmin.model.update(
+            { count: 0 },
+            { where: { [modelAdmin.pkName]: ids }, transaction }
+          )
+        )
+        .then(() => transaction.commit())
+        .catch(() => transaction.rollback())
+        .then(() => exit())
+    }
+  }
+]</code></pre><p>Теперь достаточно отметить чекбоксы соответствующих записей и выбрать пункт <code>zerofy</code> из выпадающего списка в заголовке колонки с чекбоксами. По умолчанию там присутствует только пункт <code>delete</code>.</p>
+<p>Коллбэк <code>renderer</code> позволяет полностью управлять отображением и переходами между страницами, как это сделано в действии <code>delete</code>, но в данном случае явно избыточен. Вместо него можно в свойстве <code>changer</code> определить простой коллбэк, принимающий записи по одной:</p>
+<pre class="prettyprint source lang-js"><code>this.actions = [
+  {
+    name: 'zerofy',
+    changer: entry => (entry.count = 0)
+  }
+]</code></pre><p>Не всегда оптимально, но определённо намного проще.</p>
+<p><code>TODO</code>: возврат ошибок и affected rows</p>
+<h2>Обработка параметров запроса и сквозные параметры</h2><p>После редактирования записи модели желательно вернуться к просмотру списка записей в том же состоянии, включая пагинацию, поиск и т.д. Для упрощения этого, некоторые параметры должны автоматически передаваться при навигации. Реализовано это следующим образом. Есть предопределённый список параметров и функция, которая создаёт URL перехода включающего все эти параметры в сериализованном виде в свойстве <code>params</code>. Например, если мы находся на странице <code>/admin/model/modelName/?search=тест</code>, при переходе на вторую страницу результатов поиска, URL ссылки перехода будет содержать <code>/admin/model/modelName?params={&quot;search&quot;:&quot;тест&quot;,&quot;page&quot;:1}</code>.</p>
+<p>Все URL переходов внутри админ-панели должны создаваться функцией <code>req.SA.queryExtender()</code>, принимающей следующие параметры:</p>
+<ul>
+<li>массив частей пути относительно корня админ-панели <code>['model', 'modelName']</code></li>
+<li>объект с новыми параметрами <code>{page: 1}</code></li>
+<li>массив параметров, которые не следует включать в запрос или <code>false</code> для исключния всех.</li>
+</ul>
+<p>В результате вышеупомянутая ссылка пагинации выглядит так (используется <code>pug</code>):</p>
+<pre class="prettyprint source lang-js"><code>a(href=req.SA.queryExtender([&quot;model&quot;, req.SA.modelName], {page: data.page+1}, []) >></code></pre><p>Аналогично, при использовании форм, в форму следует включить поле сгенерированное <code>req.SA.formExtender</code> с теми же аргументами кроме первого</p>
+<pre class="prettyprint source lang-js"><code>//- action формы создаётся без параметров запроса
+form(action=req.SA.queryExtender([&quot;model&quot;, req.SA.modelName], {}, false), enctype=&quot;multipart/form-data&quot;)
+  //- поле формы
+  input(type=&quot;text&quot;, name=&quot;search&quot;, value=req.SA.params.search)
+  //- параметры кроме search и page вставлены в форму
+  | !{req.SA.formExtender({}, [&quot;search&quot;, &quot;page&quot;])}</code></pre><p>На что следует обратить внимание:</p>
+<ul>
+<li><code>action</code> формы не должно содержать параметров</li>
+<li>значение поля формы берётся из <code>req.SA.params.search</code></li>
+<li>при вызове <code>req.SA.formExtender</code> необходимо явно исключить свойство <code>search</code>, иначе после очистки поле поиска будет использовано старое значение</li>
+<li><code>page</code> очищается из тех соображений, что номер текущей страницы после изменения результатов вывода не имеет смысла</li>
+</ul>
+<p>Подробнее о <code>req.SA.params.search</code>: в него попадают содержимое десериализованного поля <code>params</code>, параметры запроса, параметры форм в порядке перекрытия.</p>
+<p>Список сквозных параметров: <code>['sort', 'page', 'search', 'subwindow', 'action', 'entryIds', 'backurl']</code></p>
+<h2>Валидация</h2><p>Проверки корректности вводных данных лежат на <code>sequelize</code>, поэтому желательно описывать проверки при объявлении поля. Подробнее <a href="http://docs.sequelizejs.com/">по ссылке</a></p>
+<p>Собственные проверки можно поместить в сеттер.</p>
+<h2>Локализация</h2><p>Запустите созданный ранее cli.js для получения объекта переводов</p>
+<pre class="prettyprint source lang-sh"><code>node cli dumptranslation [--empty] [--hints] > translations/[локаль].json</code></pre><p>Отредактируйте локаль, переводы сообщений, имена моделей, полей и действий. Повторить по количеству локалей.
+Так же вы можете задать подсказки для моделей и полей, в первом случае через свойство <code>hint</code>, во втором через одноименное с именем поля свойство с добавленным суффиксом <code>_hint</code></p>
+<pre class="prettyprint source lang-json"><code>  &quot;sequelize_admin_user&quot;: {
+    &quot;label&quot;: &quot;&quot;,
+    &quot;plural&quot;: &quot;&quot;,
+    &quot;hint&quot;: &quot;подсказка модели&quot;,
+    &quot;fields&quot;: {
+      &quot;username&quot;: &quot;&quot;,
+      &quot;username_hint&quot;: &quot;подсказка поля&quot;,
+  ...</code></pre><p>Сгруппируйте переводы и передайте свойство <code>translation</code> в третий аргумент <code>sequelizeAdmin</code>:</p>
+<pre class="prettyprint source lang-js"><code>app.use(
+  '/admin',
+  sequelizeAdmin(express, db.sequelize, {
+    translation: Object.assign(
+      {},
+      require('./translations/ru'),
+      require('./translations/de')
+    )
+  })
+)</code></pre><p>Автоматизация импорта содержимого папки translations на ваше усмотрение.</p>
+<p>TODO: перевод ошибок</p>
+<h2>Управление пользователями и правами</h2><p>Для создания суперпользователя выполните</p>
+<pre class="prettyprint source lang-sh"><code>node cli createsuperuser логин пароль</code></pre><p>В режиме разработки (<code>process.env.NODE_ENV !== 'production'</code>) это необязательно, при отстутствии суперпользователей осуществляется автоматический вход пользователя <code>EMERGENCY</code> и выводится предупреждение.</p>
+<p>В список моделей добавлена <code>sequelize_admin_users</code>, в которой перечислены все пользователи, а также есть возможность управления правами доступа к моделям согласно CRUD.</p>
+<h2>Ограничения</h2><ul>
+<li>подразумевается что <code>primary key</code> является числовым</li>
+<li>работа c <code>paranoid option</code> не проверялась</li>
+<li>для парсинга форм используется <code>formidable</code>, желательно использовать <code>enctype=&quot;multipart/form-data&quot;</code>. Настройки парсера можно передать в свойстве <code>formidableOpts</code> третьего параметра sequelizeAdmin</li>
+<li>требуется NodeJS не ниже 6 версии, проверялось на 6.14</li>
+</ul></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-cli.html">cli</a></li><li><a href="module-sequelize-admin.html">sequelize-admin</a></li></ul><h3>Classes</h3><ul><li><a href="ModelAdmin.html">ModelAdmin</a></li><li><a href="ModelAdminManager.html">ModelAdminManager</a></li></ul><h3>Namespaces</h3><ul><li><a href="req.html">req</a></li><li><a href="req.SA.html">SA</a></li><li><a href="req.SA.utils.html">utils</a></li><li><a href="res.html">res</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue May 29 2018 16:25:38 GMT+0700 (+07)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: ModelAdmin/index.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: ModelAdmin/index.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const promiseAllProps = require('promise-all-props')
+const getAssociations = require('../utils/getAssociations')
+
+const typeHelpers = {
+  widget: Object.assign({}, require('./widgets')),
+  view: Object.assign({}, require('./views')),
+  setter: Object.assign({}, require('./setters'))
+}
+
+/**
+  @class Wrapper over Sequelize.Model
+  @prop {Array&lt;ModelAdmin~action>} actions List of actions
+  @prop {array&lt;String>} list_fields List of fields, visible on list view.
+  You can define nonexistent field here and define its view method via addFieldsDescriptions
+  @prop {array&lt;String>} list_links List of fields, which are links 
+  @prop {array&lt;String>} list_exclude List of fields, excluded from list view
+  You can define nonexistent field here to show all fields
+
+  @prop {number} list_per_page Number of entries on list view page 
+  @prop {array&lt;String>} search_fields Searchable fields
+  if not set -- all STRING and TEXT fields
+
+  @prop {array&lt;String>} ordering Default model list ordering, prepend minus means desc order
+  example: ['date', '-active']
+
+  @prop {array&lt;String>} editor_fields List of fields, visible on entry editor screen 
+  @prop {array&lt;String>} readonly_fields List of readonly fields 
+
+  @prop {String} icon Html code of icon in model list screen. Default &amp;lt;span class="oi oi-list"&amp;gt;&amp;lt;/span&amp;gt;
+*/
+
+class ModelAdmin {
+  /**
+   * @constructs ModelAdmin
+   * @param {Sequelize.Model} model The model produced by Sequelize.define
+   */
+  constructor(model) {
+    this._model = model
+    this.fieldProps = {}
+    this._userdesc = {}
+    this.extra_resources = []
+    // display list section
+    this.actions = []
+    this.list_fields = []
+    this.list_links = []
+    this.list_exclude = []
+    this.list_per_page = 10
+    this.search_fields = []
+    this.ordering = []
+    // entry editor section
+    this.editor_fields = []
+    this.readonly_fields = []
+    this.icon = '&lt;span class="oi oi-list">&lt;/span>'
+    this.init()
+  }
+
+  /** User-defined initialization
+   * @private
+   */
+  init() {}
+
+  checkProps() {
+    ;[
+      'list_fields',
+      'list_links',
+      'list_exclude',
+      'search_fields',
+      'ordering',
+      'editor_fields',
+      'readonly_fields',
+      'actions'
+    ].map(varName => {
+      if (!(this[varName] instanceof Array))
+        throw new Error(`ModelAdmin.${varName} must be an array`)
+    })
+    this.actions.map((action, i) => {
+      if (
+        action.name == undefined ||
+        (action.renderer &amp;&amp; action.changer) ||
+        (!action.renderer &amp;&amp; !action.changer)
+      )
+        throw new Error(`ModelAdmin.actions[${i}] is malformed`)
+    })
+  }
+
+  /**
+   * Walk over this.fieldProps, filter by cb
+   * @private
+   * @param {function} cb
+   * @returns {Array&lt;String>} list of matched fieldnames
+   */
+  filterFields(cb) {
+    return Object.keys(this.fieldProps)
+      .map(name => this.fieldProps[name])
+      .filter(cb)
+      .map(fprop => fprop.name)
+  }
+
+  /**
+   * create description of all attributes, associations, pseudo-fields
+   * @private
+   */
+  populateFieldsProps() {
+    // collect attributes
+    Object.keys(this._model.attributes)
+      .filter(k => !this._model.attributes[k].references)
+      .map(
+        k =>
+          (this.fieldProps[k] = {
+            isAttribute: true,
+            field: this._model.attributes[k]
+          })
+      )
+
+    // collect associations
+    Object.keys(this._model.associations).map(
+      k =>
+        (this.fieldProps[k] = {
+          isAssociation: true,
+          field: this._model.associations[k]
+        })
+    )
+
+    // collect pseudo-fields
+    this.editor_fields.concat(this.list_fields).map(k => {
+      if (!this.fieldProps[k])
+        this.fieldProps[k] = {
+          isArtificial: true
+        }
+    })
+
+    // populate field properties
+    Object.keys(this.fieldProps).map((fieldName, index) => {
+      const fprop = this.fieldProps[fieldName]
+
+      fprop.name = fieldName
+
+      // type
+      fprop.type = fprop.isAssociation
+        ? fprop.field.associationType
+        : fprop.isAttribute
+          ? fprop.field.type.constructor.name
+          : undefined
+
+      fprop.isLink = this.list_links.length
+        ? this.list_links.includes(fieldName)
+        : this.list_fields.length
+          ? this.list_fields[0] === fieldName
+          : index === 0
+
+      fprop.readOnly = this.readonly_fields.includes(fieldName)
+
+      fprop.editable = this.editor_fields.length
+        ? this.editor_fields.includes(fieldName) &amp;&amp; !fprop.isArtificial
+        : !fprop.isArtificial
+
+      fprop.needSave =
+        fprop.editable &amp;&amp; !fprop.readOnly &amp;&amp; fieldName !== this.pkName
+      //
+      ;['view', 'widget', 'setter'].map(cbname => {
+        const cb =
+          this._userdesc[fieldName] &amp;&amp; this._userdesc[fieldName][cbname]
+            ? this._userdesc[fieldName][cbname]
+            : typeHelpers[cbname][fprop.type] || typeHelpers[cbname]['STRING']
+        fprop[cbname] = cb instanceof Function ? cb : typeHelpers[cbname][cb]
+      })
+
+      fprop.isHtml = this._userdesc[fieldName] &amp;&amp; this._userdesc[fieldName].html
+
+      fprop.searchable = this.search_fields.length
+        ? this.search_fields.includes(fieldName) &amp;&amp; fprop.isAttribute
+        : ['STRING', 'TEXT'].includes(fprop.type)
+
+      fprop.sortable = fprop.isAttribute
+    })
+
+    // repr pseudo field
+    this.fieldProps.___repr___ = {
+      isRepr: true,
+      isArtificial: true,
+      isLink: true,
+      view: this.repr.bind(this)
+    }
+  }
+
+  /**
+   * Set description for field fieldName
+   * @param {String} fieldName
+   * @param {ModelAdmin~fieldDescription} description
+   */
+  setFieldDescription(fieldName, description) {
+    this._userdesc[fieldName] = description
+  }
+
+  /**
+   * Add field descriptions
+   * @param {ModelAdmin~fieldDescriptions} descriptions
+   */
+  addFieldDescriptions(descriptions) {
+    Object.assign(this._userdesc, descriptions)
+  }
+
+  /**
+   * Push extra js or css to page &lt;head> section.
+   * Resources can be tag &lt;script|link...> or url
+   * or array of those. Url type is determined by endsWith('js|css')
+   * so you can add #js to end.
+   * @param {String|Array&lt;String>} resources
+   */
+  addExtraResource(resources) {
+    if (!(resources instanceof Array)) resources = [resources]
+    resources.map(res => {
+      res = res.trim()
+      if (!res.startsWith('&lt;')) {
+        if (res.endsWith('js'))
+          res = `&lt;script src="${res}" type="text/javascript">&lt;/script>`
+        else if (res.endsWith('css'))
+          res = `&lt;link href="${res}" rel="stylesheet">&lt;/link>`
+        else {
+          console.warn(`Unrecognized resource "${res}", neither js nor css`)
+          res = null
+        }
+      }
+      if (res &amp;&amp; !this.extra_resources.includes(res))
+        this.extra_resources.push(res)
+    })
+  }
+
+  /**
+   * Override widget render function for selected type
+   *
+   * @param {String} type type for override, e.g. enum of  Sequelise.TYPE - DATE, HasOne etc
+   * @param {ModelAdmin~widgetRenderer} widgetRenderer
+   * @return widget html
+   */
+  overrideTypeWidget(type, renderer) {
+    typeHelpers.widget[type] = renderer
+  }
+
+  /**
+   * Override view render function for selected field type
+   *
+   * @param {String} type type for override, e.g. DATE, HasOne etc
+   * @param {ModelAdmin~viewRenderer} renderer render function
+   */
+  overrideTypeView(type, renderer) {
+    typeHelpers.view[type] = renderer
+  }
+
+  /**
+   * Override setter function for selected field type
+   *
+   * @param {String} type type for override, e.g. DATE, HasOne etc
+   * @param {ModelAdmin~setter} setter render function
+   */
+  overrideTypeSetter(type, setter) {
+    typeHelpers.setter[type] = setter
+  }
+
+  /**
+   * Model instance
+   * @type {Sequelize.Model}
+   * @readonly
+   */
+  get model() {
+    return this._model
+  }
+
+  /**
+   * Model name
+   * @type {String}
+   * @readonly
+   */
+  get name() {
+    return this._model.name
+  }
+
+  /**
+   * Model plural name
+   * @type {String}
+   * @readonly
+   */
+  get namePlural() {
+    return this._model.options.name.plural
+  }
+
+  /**
+   * Model primary key name
+   * @type {String}
+   * @readonly
+   */
+  get pkName() {
+    return this._model.primaryKeyAttribute
+  }
+
+  /**
+   * Override this for custom entry representation,
+   * default is entry label + primary key
+   * @param {Express.Request} req
+   * @param {Sequelize.ModelInstance} entry
+   * @returns {String|Promise&lt;String>}
+   */
+  repr(req, entry) {
+    return Promise.resolve(req.SA.trModel(this) + ' ' + entry[this.pkName])
+  }
+
+  /**
+   * Override this to do something before model list will rendered,
+   * for example do subquery or compute average. You have to cache the result
+   * within req object to use it in {@link ModelAdmin~viewRenderer} callback
+   * @param {Express.Request} req
+   * @param {Number} count Count of selected entries considering search param
+   * @param {Array&lt;Object>} entries Selected entries
+   */
+  beforeListRender(req, count, entries) {}
+
+  /**
+   * Render model view instead default model list
+   * @method modelListRenderer
+   * @param {Express.Request} req
+   * @param {Express.Response} res
+   * @param {Function} next
+   * @memberof ModelAdmin
+   */
+
+  /**
+   * Render entry editor view instead default one
+   * @method entryRenderer
+   * @param {Express.Request} req
+   * @param {Express.Response} res
+   * @param {Function} next
+   * @memberof ModelAdmin
+   */
+
+  /**
+   * Get all entries sorted by this.ordering
+   * @private
+   * @returns {Promise&lt;Sequelize.ModelInstance>}
+   */
+  getAllEntries() {
+    const query = {}
+    query.order =
+      this.ordering.length > 0
+        ? this.ordering.map(fieldName => {
+            let desc = false
+            if (fieldName.charAt(0) === '-') {
+              fieldName = fieldName.substring(1, fieldName.length)
+              desc = true
+            }
+            return [fieldName, desc ? 'DESC' : 'ASC']
+          })
+        : []
+    return this._model.findAll(query)
+  }
+
+  /**
+   * @private
+   * @param {Express.Request} req
+   * @param {Sequelize.Instance} entry
+   * @param {String} fieldName - association name we looking for
+   * @param {boolean} useFormData - use req.body[fieldName] or entry[fieldName]
+   * @returns {*|Promise&lt;*>}
+   */
+  getFieldValue(req, entry, fieldName, useFormData) {
+    // simple field
+    if (this.fieldProps[fieldName].isAttribute)
+      return useFormData ? req.body[fieldName] : entry[fieldName]
+    // associated field
+    else {
+      const { targetGetter, targetModelAdmin } = getAssociations(
+        req,
+        entry,
+        fieldName
+      )
+      return useFormData
+        ? req.body[fieldName] === undefined
+          ? []
+          : req.SA.utils
+              .toArray(req.body[fieldName])
+              .map(id => parseInt(id, 10))
+        : entry.isNewRecord // TODO if default value?
+          ? []
+          : entry[targetGetter]().then(selectedEntries =>
+              req.SA.utils
+                .toArray(selectedEntries)
+                .map(targetEntry => targetEntry[targetModelAdmin.pkName])
+            )
+    }
+  }
+
+
+  genSequelizeQueryOrderClause() {
+    const query = {}
+    if (this.ordering.length) {
+      query.order = this.ordering.map(fieldName => {
+        let desc = false
+        if (fieldName.charAt(0) === '-') {
+          fieldName = fieldName.substring(1, fieldName.length)
+          desc = true
+        }
+        return [fieldName, desc ? 'DESC' : 'ASC']
+      })
+    }
+    return query
+  }
+
+  /**
+   * Generate sequelize query clause
+   * @param {Express.Request} req
+   * @private
+   * @returns {Object}
+   */
+  genSequelizeQueryClause(req) {
+    const query = {}
+    if (!req.SA.params.showAll) {
+      query.limit = this.list_per_page
+      query.offset = this.list_per_page * parseInt(req.SA.params.page || 0, 10)
+    }
+    if (req.SA.params.sort)
+      query.order = [[req.SA.params.sort, req.SA.params.desc ? 'DESC' : 'ASC']]
+    else Object.assign(query, this.genSequelizeQueryOrderClause())
+
+    if (req.SA.params.search)
+      query.where = {
+        [req.SA.Sequelize.Op.or]: this.filterFields(f => f.searchable).map(
+          fieldName => {
+            return {
+              [fieldName]: {
+                [req.SA.Sequelize.Op.like]: '%' + req.SA.params.search + '%'
+              }
+            }
+          }
+        )
+      }
+    return query
+  }
+
+  /**
+   * Compute data for model table
+   * @private
+   * @param {Express.Request} req - request object for paging, sorting, filtering
+   * @returns {Object}
+   */
+  getDisplayListData(req) {
+    let total
+    return promiseAllProps({
+      actions: this.actions.map(act => {
+        act.label = req.SA.trAction(act.name)
+        return act
+      }),
+      headers: this.list_fields.map(fieldName => {
+        const label = this.fieldProps[fieldName].isRepr
+          ? req.SA.trModel(this).plural
+          : req.SA.trField(this.name, fieldName)
+        return {
+          isSortable: this.fieldProps[fieldName].sortable,
+          label,
+          fieldName
+        }
+      }),
+      rows: this._model
+        .findAndCountAll(this.genSequelizeQueryClause(req))
+        .then(({ count, rows }) => {
+          // common work for all entries
+          return Promise.resolve(this.beforeListRender(req, count, rows))
+            .then(() => ({ count, rows }))
+            .catch(e => {
+              throw e
+            })
+        })
+        .then(({ count, rows: entries }) => {
+          total = count
+          return Promise.all(
+            entries.map(entry =>
+              promiseAllProps({
+                pk: entry[this.pkName],
+                columns: Promise.all(
+                  this.list_fields.map(fieldName =>
+                    promiseAllProps({
+                      isLink: this.fieldProps[fieldName].isLink,
+                      isHtml: this.fieldProps[fieldName].isHtml,
+                      value: this.fieldProps[fieldName].view(
+                        req,
+                        entry,
+                        fieldName
+                      ),
+                      type: this.fieldProps[fieldName].type
+                    })
+                  )
+                )
+              })
+            )
+          )
+        })
+    }).then(data => {
+      data.total = total
+      data.perPage = !req.SA.params.showAll
+        ? this.list_per_page
+        : Number.MAX_SAFE_INTEGER
+      data.page = parseInt(req.SA.params.page || 0, 10)
+      data.pages = Math.ceil(data.total / data.perPage)
+      return data
+    })
+  }
+
+  /**
+   * @private
+   * @param {Express.Request} req
+   * @param {Sequelize.ModelInstance} entry
+   * @param {Sequelize.ValidationError} validationError
+   * @returns {Promise}
+   */
+  getEditorData(req, entry, validationError) {
+    return promiseAllProps({
+      header: entry.isNewRecord
+        ? req.SA.tr('new') + ' ' + req.SA.trModel(this)
+        : Promise.resolve(this.repr(req, entry)).then(
+            repr => req.SA.trModel(this) + ' • ' + repr
+          ),
+      fields: Promise.all(
+        this.editor_fields
+          .filter(fieldName => this.fieldProps[fieldName].editable)
+          .map(fieldName =>
+            Promise.resolve(
+              this.getFieldValue(req, entry, fieldName, !!validationError)
+            ).then(value =>
+              promiseAllProps({
+                label: req.SA.trField(this.name, fieldName),
+                widget: this.fieldProps[fieldName].widget(
+                  req,
+                  entry,
+                  fieldName,
+                  value,
+                  {
+                    readOnly: this.fieldProps[fieldName].readOnly
+                  }
+                ),
+                targetModel: !this.fieldProps[fieldName].isAttribute
+                  ? getAssociations(req, entry, fieldName).targetModelAdmin.name
+                  : null,
+                name: fieldName,
+                errors: validationError ? validationError.get(fieldName) : null
+              })
+            )
+          )
+      )
+    })
+  }
+
+  /**
+   * @private
+   * @param {Express.Request} req
+   * @param {Sequelize.ModelInstance} entry
+   * @throws {Sequelize.ValidationError}
+   * @returns {Promise}
+   */
+  save(req, entry) {
+    let transaction
+    return req.SA.sequelizeInstance
+      .transaction()
+      .then(_transaction => (transaction = _transaction))
+      .then(() =>
+        Promise.all(
+          this.filterFields(f => f.needSave).map(fieldName =>
+            this.fieldProps[fieldName].setter(
+              req,
+              entry,
+              fieldName,
+              transaction
+            )
+          )
+        )
+      )
+      .then(() =>
+        entry.save({
+          transaction
+        })
+      )
+      .catch(e => {
+        transaction.rollback()
+        throw e
+      })
+      .then(() => transaction.commit())
+  }
+
+  /**
+   * @private
+   * @param {Express.Request} req
+   * @param {Express.Response} res
+   * @param {String} action
+   * @param {Array&lt;*>}  ids list of selected model primaryKeys
+   * @returns {Promise}
+   */
+  doAction(req, res, action, ids) {
+    const actionObject = this.actions.filter(a => a.name === action)[0]
+    if (actionObject &amp;&amp; typeof actionObject.renderer === 'function')
+      return actionObject.renderer(req, res, this, ids, () => {
+        res.redirect(
+          302,
+          req.SA.queryExtender(['model', this.name], {}, ['action', 'entryIds'])
+        )
+      })
+    else if (actionObject &amp;&amp; typeof actionObject.changer === 'function') {
+      let transaction
+      return req.SA.sequelizeInstance
+        .transaction()
+        .then(_transaction => (transaction = _transaction))
+        .then(() =>
+          this._model.findAll({
+            where: { [this.pkName]: ids },
+            transaction
+          })
+        )
+        .then(entries =>
+          Promise.all(
+            entries.map(entry => {
+              return Promise.resolve(actionObject.changer(entry))
+                .then(() => entry.save({ transaction }))
+                .catch(e => {
+                  throw e
+                })
+            })
+          )
+        )
+        .then(() => transaction.commit())
+        .catch(() => transaction.rollback())
+        .then(() => {
+          res.redirect(
+            302,
+            req.SA.queryExtender(['model', this.name], {}, [
+              'action',
+              'entryIds'
+            ])
+          )
+        })
+    }
+  }
+
+  /**
+   * @private
+   */
+  postInit() {
+    this.checkProps()
+    this.populateFieldsProps()
+    if (!this.list_fields.length) this.list_fields = ['___repr___']
+    this.actions.push({
+      name: 'delete',
+      renderer: require('./deleteAction')
+    })
+    return this
+  }
+}
+
+/**
+ * Represent action structure. Define name and *ONE* of [renderer|changer] callback.
+ * @typedef ModelAdmin~action
+ * @type {object}
+ * @prop {String} name action name
+ * @prop {ModelAdmin~actionRenderer} renderer render function
+ * @prop {ModelAdmin~actionChanger} changer simple entry change function
+ */
+
+/**
+ * Full-featured render callback. You can create own navigation, confirmation, etc.
+ * Also, you must handle transaction manually.
+ * To return to entry list call exit callback
+ *
+ * @callback ModelAdmin~actionRenderer
+ * @param {Express.Request} req
+ * @param {Express.Response} res
+ * @param {ModelAdmin} modelAdmin ModelAdmin instance, associated with current model
+ * @param {Array&lt;*>} ids list of selected model primaryKeys
+ * @param {Function} exit return callback, redirects to entry list
+ * @returns {Promise&lt;String>} page html
+ * @todo show errors
+ */
+
+/**
+ * Simple per-entry update callback, just get entry and update it fields
+ * @callback ModelAdmin~actionChanger
+ * @param {Object} entry
+ * @returns {Promise|any}
+ * @todo show errors
+ */
+
+/**
+ * @typedef ModelAdmin~fieldDescriptions
+ * @type {object}
+ * @prop {ModelAdmin~fieldDescription} $fieldName
+ */
+
+/**
+ * @typedef ModelAdmin~fieldDescription
+ * @type {object}
+ * @prop {ModelAdmin~viewRenderer|String} view View renderer or type name
+ * @prop {boolean} html Indicates that view produce html, so you must escape it self
+ * @prop {ModelAdmin~widgetRenderer|String} widget Widget renderer or type name
+ * @prop {ModelAdmin~setter|String} setter setter function or type name
+ */
+
+/**
+ * Render entry field for table view
+ *
+ * @callback ModelAdmin~viewRenderer
+ * @param {Express.Request} req
+ * @param {Sequelize.ModelInstance} entry
+ * @param {String} fieldName
+ * @returns {String|Promise&lt;String>}
+ */
+
+/**
+ * Render entry field for editor widget
+ *
+ * @callback ModelAdmin~widgetRenderer
+ * @param {Express.Request} req
+ * @param {Sequelize.ModelInstance} entry
+ * @param {String} fieldName
+ * @param {*} value Raw field value from database entry or http post request
+ * @param {Object} options widget options, readOnly mostly
+ * @returns {String|Promise&lt;String>} rendered html widget
+ */
+
+/**
+ * Set value of entry field $fieldName given at req.body[fieldName]
+ *
+ * @callback ModelAdmin~setter
+ * @param {Express.Request} req
+ * @param {Sequelize.ModelInstance} entry
+ * @param {String} fieldName
+ * @param {*} transaction
+ * @returns {Promise}
+ */
+
+// /**
+//  * Object, containing header list and two-dimensional array with field representations
+//  * @typedef ModelAdmin~displayListData
+//  * @type {object}
+//  * @prop {array} header list of field labels
+//  * @prop {array} rows list of rows
+//  * @prop {array} rows.columns list of field representations, see ModelAdmin~viewRenderer
+//  * @see ModelAdmin~viewRenderer
+//  */
+
+// /**
+//  * List of objects, containing label, widget and errors
+//  * @typedef ModelAdmin~editorData
+//  * @type {array}
+//  * @prop {String} label widget label
+//  * @prop {String} widget html widget
+//  * @prop {array&lt;Sequelise.ValidationErrorItem>} errors errors, occured with previous saving
+//  * @see ModelAdmin~viewRenderer
+//  */
+
+module.exports = ModelAdmin
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-cli.html">cli</a></li><li><a href="module-sequelize-admin.html">sequelize-admin</a></li></ul><h3>Classes</h3><ul><li><a href="ModelAdmin.html">ModelAdmin</a></li><li><a href="ModelAdminManager.html">ModelAdminManager</a></li></ul><h3>Namespaces</h3><ul><li><a href="req.html">req</a></li><li><a href="req.SA.html">SA</a></li><li><a href="req.SA.utils.html">utils</a></li><li><a href="res.html">res</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue May 29 2018 16:25:38 GMT+0700 (+07)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

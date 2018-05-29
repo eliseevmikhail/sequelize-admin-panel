@@ -1,0 +1,4 @@
+select.form-control(name=fieldName, disabled=options.readOnly)
+  option(value=0) ------
+  each target in list  
+    option(value=target.pk, selected=target.selected)= target.value

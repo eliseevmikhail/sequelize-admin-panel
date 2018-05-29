@@ -1,0 +1,91 @@
+extends layout.pug
+
+block content
+  script.
+    var targetWindow = null
+    function openSubWindow(url, fieldName) {
+      document.querySelector("#overlay").style.display = "block";
+      targetWindow = window.open(url);
+      var timer = setInterval(function() {   
+        // window.onclose doesnt work :(
+        if(targetWindow.closed) {  
+          clearInterval(timer);
+          if(targetWindow.returnValue) {
+            //- get select form field
+            //- add new option and select as default
+            var select = document.querySelector("[name='"+fieldName+"']");
+            var newOption = document.createElement("option");
+            newOption.value = targetWindow.returnValue;
+            select.add(newOption);
+            newOption.selected = true;
+          }
+          document.querySelector("form").submit();
+        }  
+      }, 200);
+    }
+
+    function closeSubWindow() {
+      var arr = window.location.pathname.split("/")
+      var id = arr[arr.length-1]
+      if(id !== "new") window.returnValue = id
+      window.close();
+    }
+
+  div#overlay.p-3
+    span.text-white= req.SA.tr('waiting_closing_subwindow')
+  nav.navbar.bg-dark.navbar-dark
+    span
+      a.navbar-brand.text-white.btn.mx-0(href=req.SA.queryExtender([], {}, false))
+        span.oi.oi-home
+      span.text-white= data.header
+  div#mainWindow.container-fluid.mt-3
+    form(method="post", enctype="multipart/form-data")
+      div.container-fluid.mb-5.pb-5
+        each field in data.fields
+          div.form-group.row
+            div.col-xs-12.col-sm-3.col-form-label
+              if field.targetModel && req.SA.checkPermission(req, req.SA.PERMISSION.READ, field.targetModel)
+                a(href=req.SA.queryExtender(["model", field.targetModel]))= field.label.capitalize()
+              else
+                | #{field.label.capitalize()}
+            div.col-xs-12.col-sm-9
+              if field.errors
+                each error in field.errors
+                  div.bg-warning= error.message
+              - const hint = req.SA.trField(req.SA.modelName, field.name + "_hint", null)
+              if hint
+                div.text-muted.small= hint
+              div.input-group
+                if field.targetModel
+                  div.input-group-prepend
+                    if req.SA.checkPermission(req, req.SA.PERMISSION.CREATE, field.targetModel)
+                      - var url = req.SA.queryExtender(["entry", field.targetModel, "new"], {subwindow: true})
+                      button.btn.btn-basic(type="button", onclick="openSubWindow('"+url+"', '"+field.name+"'); return false")
+                        span.oi.oi-plus
+                | !{field.widget}
+                if field.targetModel
+                  div.input-group-append
+                    button.btn.btn-basic(type="button", onclick="var $el=$('[name="+field.name+"]'); \
+                    $el.attr('size', $el.children('option').length); $(this).hide()")
+                      span.oi.oi-fullscreen-enter
+      nav.navbar.bg-dark.navbar-dark.fixed-bottom
+        if req.SA.params.subwindow
+          button.btn.btn-primary(type="button", onclick = "closeSubWindow(); return false")
+            span.oi.oi-action-undo.mx-1
+            | Close
+          if (req.SA.checkPermission(req, req.SA.PERMISSION.CREATE, req.SA.modelName) && isNewEntry) || (req.SA.checkPermission(req, req.SA.PERMISSION.UPDATE, req.SA.modelName) && !isNewEntry)
+            button.btn.btn-success(type="submit", name="_sa_action", value="apply")
+              span.oi.oi-check.mx-1
+              | Apply
+        else
+          a.btn.btn-primary(href=req.SA.queryExtender(["model", req.SA.modelName]))
+            span.oi.oi-action-undo.mx-1
+            | #{req.SA.tr("back")}
+          if (req.SA.checkPermission(req, req.SA.PERMISSION.CREATE, req.SA.modelName) && isNewEntry) || (req.SA.checkPermission(req, req.SA.PERMISSION.UPDATE, req.SA.modelName) && !isNewEntry)
+            button.btn.btn-success(type="submit", name="_sa_action", value="save")
+              span.oi.oi-check.mx-1
+              | #{req.SA.tr("save")}
+            button.btn.btn-secondary(type="submit", name="_sa_action", value="apply")
+              span.oi.oi-check.mx-1
+              | #{req.SA.tr("apply")}
+      | !{req.SA.formExtender()}

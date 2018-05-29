@@ -1,0 +1,40 @@
+{
+  "en": {
+    "ui": {
+      "site_title": "Sequelize admin panel",
+      "back": "Back",
+      "apply": "Apply",
+      "save": "Save",
+      "search": "Search",
+      "do_you_want_to_delete": "Do you want to delete this entries?",
+      "deleting_denied": "You have not permissions to delete some of the entries",
+      "waiting_closing_subwindow": "Waiting for the subwindow to close",
+      "no_superuser_warning": "Super user does not exist. Authentification is disabled!",
+      "login_user": "Enter login",
+      "login_password": "Password",
+      "login_button": "Submit",
+      "empty_list": "List is empty",
+      "show all": "show all",
+      "yes": "yes",
+      "no": "no",
+      "cancel": "cancel",
+      "CREATE": "CREATE",
+      "READ": "READ",
+      "UPDATE": "UPDATE",
+      "DELETE": "DELETE",
+      "ALL": "ALL"
+    },
+    "models": {
+      "sequelize_admin_user": {
+        "label": "administrator",
+        "plural": "administrators",
+        "fields": {
+          "password_hint": "4-20 symbols"
+        }
+      }
+    },
+    "actions": {
+      "delete": "delete"
+    }
+  }
+}

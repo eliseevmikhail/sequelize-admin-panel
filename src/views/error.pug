@@ -1,0 +1,10 @@
+extends layout.pug
+
+block content
+  div.container.p-3
+    a.btn.btn-block.btn-dark.text-white.oi.oi-home(href=req.SA.queryExtender([], {}, false))
+    h1.oi.oi-bug.my-5
+      | #{error.name}:
+      | #{error.message}
+    if process.env.NODE_ENV !== 'production'
+      pre= error.stack

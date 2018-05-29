@@ -1,0 +1,16 @@
+{
+  "name": "demo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "initdb": "rm -rf ./demo.sqlite; node cli init --all; node populateDB",
+    "start": "nodemon -w ../ -w ."
+  },
+  "dependencies": {
+    "express": "^4.16.3",
+    "sequelize": "^4.37.8",
+    "sequelize-cli": "^4.0.0",
+    "sqlite3": "^4.0.0"
+  }
+}

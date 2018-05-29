@@ -1,0 +1,27 @@
+extends layout.pug
+
+block content
+  nav.navbar.bg-dark.navbar-dark
+    span.navbar-brand.text-white= pageTitle     
+    include parts/logoutLink
+
+  div.container-fluid.p-0
+    if modelAdmins.length === 0
+      div.p-3= req.SA.tr('empty_list')
+    else
+      div.table-responsive
+        table.table.table-hover
+          tbody
+            each modelAdmin in modelAdmins
+              if req.SA.checkPermission(req, req.SA.PERMISSION.READ, modelAdmin.name)
+                tr
+                  td!= modelAdmin.icon
+                  td.col-md-6.button-cell(data-href=req.SA.queryExtender(["model", modelAdmin.name], {},false))
+                    | #{req.SA.trModel(modelAdmin).plural.capitalize()}
+                    - const hint = req.SA.trModel(modelAdmin).hint
+                    if hint
+                      div.text-muted.small= hint
+                  td.col-md-1
+                    if req.SA.checkPermission(req, req.SA.PERMISSION.CREATE, modelAdmin.name)
+                      a.btn.btn-primary.mx-1(href=req.SA.queryExtender(["entry", modelAdmin.name, "new"], {},false))
+                        span.oi.oi-plus

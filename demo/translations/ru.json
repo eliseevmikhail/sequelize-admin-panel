@@ -1,0 +1,190 @@
+{
+  "ru": {
+    "ui": {
+      "back": "назад",
+      "apply": "применить",
+      "save": "сохранить",
+      "search": "поиск",
+      "do_you_want_to_delete": "Вы хотите удалить эти записи?",
+      "deleting_denied": "У вас нет прав на удаление некоторых результатов",
+      "waiting_closing_subwindow": "Ожидание закрытия вложенного окна",
+      "no_superuser_warning":
+        "Нет ни одного суперпользователя, авторизация отключена",
+      "login_user": "Имя пользователя",
+      "login_password": "Пароль",
+      "login_button": "Войти",
+      "empty_list": "Ничего не найдено",
+      "show all": "показать все",
+      "yes": "да",
+      "no": "нет",
+      "cancel": "отмена",
+      "CREATE": "СОЗДАТЬ",
+      "READ": "ЧИТАТЬ",
+      "UPDATE": "ОБНОВИТЬ",
+      "DELETE": "УДАЛИТЬ",
+      "ALL": "ВСЕ"
+    },
+    "models": {
+      "sequelize_admin_user": {
+        "label": "администратор",
+        "plural": "администраторы",
+        "hint": "внутренняя таблица sequelize admin",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "username": "имя пользователя",
+          "username_hint": "",
+          "enabled": "активен",
+          "enabled_hint": "",
+          "superuser": "суперпользователь",
+          "superuser_hint": "",
+          "password_hash": "",
+          "password_hash_hint": "",
+          "password": "пароль",
+          "password_hint": "4-20 символов",
+          "permissions": "разрешения",
+          "permissions_hint": "",
+          "createdAt": "создан в",
+          "createdAt_hint": "",
+          "updatedAt": "обновлен в",
+          "updatedAt_hint": ""
+        }
+      },
+      "actions": {
+        "label": "товар",
+        "plural": "товары",
+        "hint": "примеры действий (actions) с товарами",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "name": "название",
+          "name_hint": "",
+          "count": "количество",
+          "count_hint": "",
+          "state": "состояние",
+          "state_hint": "",
+          "createdAt": "",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": ""
+        }
+      },
+      "customViews": {
+        "label": "карта со смайликом",
+        "plural": "карты со смайликом",
+        "hint": "пример настраиваемых представлений карта+colorpicker+smiles",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "position": "местоположение",
+          "position_hint": "",
+          "color": "цвет",
+          "color_hint": "",
+          "smile": "смайлик",
+          "smile_hint": "",
+          "createdAt": "",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": ""
+        }
+      },
+      "globalOverrides": {
+        "label": "файл",
+        "plural": "файлы",
+        "hint": "пример глобальных переопределений, см. demo source",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "name": "метка",
+          "name_hint": "",
+          "file": "файл",
+          "file_hint": "в списке вместо файла показан размер",
+          "createdAt": "",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": ""
+        }
+      },
+      "WorkerProject": {
+        "label": "",
+        "plural": "",
+        "hint": "",
+        "fields": {
+          "createdAt": "",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": ""
+        }
+      },
+      "Manager": {
+        "label": "управляющий",
+        "plural": "управляющие",
+        "hint": "пример отношений hasOne, hasMany",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "name": "имя",
+          "name_hint": "",
+          "createdAt": "создан в",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": "",
+          "Workers": "сотрудники",
+          "Workers_hint": "Manager.hasMany(Worker)",
+          "Project": "проект",
+          "Project_hint": "Manager.hasOne(Project)"
+        }
+      },
+      "Project": {
+        "label": "проект",
+        "plural": "проекты",
+        "hint": "пример отношений belongsTo, belongsToMany",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "name": "название",
+          "name_hint": "",
+          "createdAt": "создан в",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": "",
+          "Workers": "сотрудники",
+          "Workers_hint": "Project.belongsToMany(Worker)",
+          "Manager": "управляющий",
+          "Manager_hint": "Project.belongsTo(Manager)"
+        }
+      },
+      "Worker": {
+        "label": "сотрудник",
+        "plural": "сотрудники",
+        "hint": "пример отношений belongsTo, belongsToMany",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "name": "имя",
+          "name_hint": "",
+          "createdAt": "создан в",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": "",
+          "Projects": "проекты",
+          "Projects_hint": "Worker.belongsToMany(Project)",
+          "Manager": "начальник",
+          "Manager_hint": "Worker.belongsTo(Manager)"
+        }
+      },
+      "fakeTable": {
+        "label": "чарт",
+        "plural": "чарт",
+        "hint": "пример работы modelListRenderer и entryRenderer, чарт на основе таблицы товаров, кнопка добавления перенаправляет туда же"
+      }
+    },
+    "actions": {
+      "delete": "удалить",
+      "zerofy_count": "обнулить количество",
+      "randomize_count": "случайное количество",
+      "uppercase_name": "верхний регистр",
+      "toggle_state": "переключить состояние"
+    }
+  }
+}

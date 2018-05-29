@@ -1,0 +1,60 @@
+input(type="hidden", name=fieldName, value=value)
+
+script.
+  function permissionToggle1(modelName, perm, cb) {
+    var field = document.querySelector('input[name="#{fieldName}"]')
+    var _parsedValue = JSON.parse(field.value)
+    if(cb.checked)
+      _parsedValue[modelName] = (_parsedValue[modelName] || 0) | perm
+    else
+      _parsedValue[modelName] = (_parsedValue[modelName] || 0) & ~perm
+    field.value=JSON.stringify(_parsedValue)
+  }
+
+  function permissionToggle(elem) {
+    var field = document.querySelector('input[name="#{fieldName}"]');
+    var parsedJSON = JSON.parse(field.value);
+    if(elem) {
+      var modelName = elem.dataset.model, perm = elem.dataset.permission;
+      var currentValue = (parsedJSON[modelName] || 0) & perm;
+      if(currentValue)
+        parsedJSON[modelName] = (parsedJSON[modelName] || 0) & ~perm
+      else
+        parsedJSON[modelName] = (parsedJSON[modelName] || 0) | perm
+      field.value=JSON.stringify(parsedJSON)
+    }
+    Array.prototype.forEach.call(
+      document.querySelectorAll("[name='permissionCell']"), 
+      function(elem) {
+        var modelName = elem.dataset.model, perm = elem.dataset.permission;
+        var currentValue = (parsedJSON[modelName] || 0) & perm;
+        if(currentValue) elem.style.backgroundColor = "green";
+        else elem.style.backgroundColor = "darkgrey";
+        }
+    );
+  }
+  $(function() {permissionToggle()});
+
+div.table-responsive
+  table.table.table-bordered.table-sm(style="table-layout: fixed")
+    tbody
+      //- tr
+      //-   each perm in Object.keys(permissions)
+      //-     th
+      //-       span(style="writing-mode: vertical-lr")= perm    
+      each modelAdmin in modelAdmins
+        tr
+          th(colspan=5)
+            | !{modelAdmin.icon}
+            | #{req.SA.trModel(modelAdmin).plural.capitalize()}
+        tr
+          each perm in Object.keys(permissions)
+            td
+              button.btn.text-white.text-center(
+                type="button",
+                style="width:100%",
+                name="permissionCell",
+                data-model=modelAdmin.name,
+                data-permission=permissions[perm],
+                onclick="permissionToggle(this)")= req.SA.tr(perm)
+                | &nbsp;

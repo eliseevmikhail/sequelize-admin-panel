@@ -1,0 +1,15 @@
+extends layout.pug
+
+block content
+  h1.text-center.my-5= req.SA.tr('site_title')
+  div.container-fluid.d-flex.justify-content-center
+    form(action="", method="post", enctype="multipart/form-data")
+      div.form-group
+        label(for="login")= req.SA.tr("login_user")
+        input#login.form-control(type="text", name="username",)
+      div.form-group
+        label(for="password")= req.SA.tr("login_password")
+        input#password.form-control(type="password", name="password")
+      button.btn.btn-primary(type="submit")
+        span.oi.oi-account-login.mr-1
+        | #{req.SA.tr("login_button")}

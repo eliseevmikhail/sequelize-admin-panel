@@ -1,0 +1,27 @@
+div.input-group.date(id="_idshow_"+fieldName)
+  input.form-control(type='text', disabled=options.readOnly)
+  span.input-group-addon
+    span.btn.oi.oi-calendar
+- value = value instanceof Date ? value : value instanceof String ? Date.parse(value) : new Date()
+input(type="hidden", id="_id_"+fieldName, name=fieldName, value=value.toISOString())
+
+script(type='text/javascript').
+  $(function () {
+    $('#{"#_idshow_"+fieldName}')
+    .datetimepicker({
+      locale: browserLocale(),
+      date: new Date($('#{"#_id_"+fieldName}').val()),
+      icons: {
+            time: "oi oi-clock",
+            date: "oi oi-calendar",
+            up: "oi oi-chevron-top",
+            down: "oi oi-chevron-bottom",
+            previous: "oi oi-chevron-left",
+            next: "oi oi-chevron-right"
+        },
+      format: "#{FORMAT}"
+    })
+    .on("dp.change", function(e) {
+      $('#{"#_id_"+fieldName}').val(e.date.toISOString());
+    });
+  });

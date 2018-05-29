@@ -1,0 +1,112 @@
+extends layout.pug
+
+block content
+  script.
+    function toggleAll(val) {
+      Array.prototype.forEach.call(
+        document.querySelectorAll("input[type='checkbox'][name='entryIds']"), 
+        function(cb) { cb.checked = val === undefined ? !cb.checked : val }
+      );
+    };
+  nav.navbar.navbar-expand-sm.bg-dark.navbar-dark.sticky-top
+    a.btn.navbar-brand.mx-0(href=req.SA.queryExtender([], {}, false))
+      span.oi.oi-home
+    if req.SA.checkPermission(req, req.SA.PERMISSION.CREATE, req.SA.modelName)
+      a.btn.btn-primary.mx-1(href=req.SA.queryExtender(["entry", req.SA.modelName, "new"]))
+        span.oi.oi-plus
+    button.navbar-toggler.collapsed.mx-1(data-toggle="collapse" 
+    type="button" data-target="#navb")
+      span.oi.oi-menu
+    div.navbar-collapse.collapse.justify-content-between#navb
+      form.form-inline.mx-1.my-sm-0.my-2(action=req.SA.queryExtender(["model", req.SA.modelName], {}, false))
+        div.input-group
+          input.form-control(type="text", name="search", value=req.SA.params.search, placeholder=req.SA.tr("search"))
+          | !{req.SA.formExtender({}, ["search", "page"])}
+          div.input-group-append
+            button.btn(type="submit")
+              span.oi.oi-magnifying-glass
+      include parts/logoutLink
+
+
+  div.container-fluid.p-0
+    if data.total === 0
+      div.p-3= req.SA.tr('empty_list')
+    else
+      form(method="post", enctype="multipart/form-data")
+        div.table-responsive
+          table.table.table-striped.table-hover.table-sm.table-bordered
+            thead.thead-dark
+              tr
+                th(style="width: 1px; vertical-align: middle;", rowspan=2)
+                  //- input(type="checkbox", onclick="toggleAll(this)")
+                  div.dropdown(style="display: table-cell")
+                    div.btn.btn-primary.dropdown-toggle(data-toggle="dropdown")
+                      span.oi.oi-task
+                    div.dropdown-menu.p-2
+                      div.btn-group.d-flex.justify-content-center
+                        div.btn(onclick="toggleAll(true); event.stopPropagation()")
+                          span.oi.oi-circle-check
+                        div.btn(onclick="toggleAll(false); event.stopPropagation()")
+                          span.oi.oi-circle-x
+                        div.btn(onclick="toggleAll(); event.stopPropagation()")
+                          span.oi.oi-contrast
+                      div.dropdown-divider
+                      div.list-group
+                        each action in data.actions
+                          button.list-group-item.list-group-item-action(type="submit", name="action" value=action.name)= action.label
+                th.text-center(colspan=(data.headers.length))
+                  span.px-2!= modelAdmin.icon
+                  | #{req.SA.trModel(modelAdmin).plural.capitalize()}             
+              tr
+                each header in data.headers
+                  th
+                    div.d-inline-flex.align-items-center
+                      div.mr-1= header.label
+                      if header.isSortable
+                        sub(style="width:1em;")
+                          a.btn.p-0.text-white.oi.oi-caret-bottom(href=
+                            req.SA.queryExtender(["model", req.SA.modelName], {sort: header.fieldName}, ["desc"]))
+                        sup(style="width:1em; left: -1em;")
+                          a.btn.p-0.text-white.oi.oi-caret-top(href=
+                            req.SA.queryExtender(["model", req.SA.modelName], {sort: header.fieldName, desc: 1}))
+            tbody
+              each row in data.rows
+                tr
+                  td.text-center
+                    input(type="checkbox", name="entryIds", value=row.pk, id="_entryId_"+row.pk)
+                  each field in row.columns
+                    if field.isLink
+                      td.button-cell(data-href=req.SA.queryExtender(["entry", req.SA.modelName, row.pk]))
+                        a(href=req.SA.queryExtender(["entry", req.SA.modelName, row.pk]))
+                          if field.isHtml
+                            | !{field.value}
+                          else
+                            | #{field.value}
+                    else
+                      td
+                        if field.isHtml
+                          | !{field.value}
+                        else
+                          | #{field.value}
+
+  if data.pages > 1
+    nav.navbar.bg-dark.navbar-dark
+      div.form-row.align-items-center
+        div.col-auto
+          a.btn.navbar-brand.mx-1(href=req.SA.queryExtender(["model", req.SA.modelName], {page: data.page-1}),
+            class=data.page === 0 ? "disabled":"")
+            span.oi.oi-chevron-left
+        div.col-auto
+          select.form-control(onchange="window.location=this.options[this.selectedIndex].value")
+            - var p = 0 
+            while p < data.pages
+              option(value=req.SA.queryExtender(["model", req.SA.modelName], {page: p}),
+                selected = p === data.page) #{++p}
+        div.col-auto
+          a.btn.navbar-brand.mx-1(href=req.SA.queryExtender(["model", req.SA.modelName], {page: data.page+1}),
+            class=data.page === data.pages-1 ? "disabled":"")
+            span.oi.oi-chevron-right
+        div.col-auto
+          a.btn.mx-1(href=req.SA.queryExtender(["model", req.SA.modelName], {showAll: 1}, ['page']))
+            | #{data.total} - #{req.SA.tr('show all')}
+        

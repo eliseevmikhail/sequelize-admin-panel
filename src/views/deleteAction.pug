@@ -1,0 +1,14 @@
+extends layout.pug
+block content
+  div.container-fluid.my-3
+    h1= req.SA.tr("do_you_want_to_delete")
+    ul
+      each record in entryReprList
+        li(class=(record.denied?"text-danger":""), style="margin-left: "+record.level*20+"px")= record.repr
+    form(method="post", enctype="multipart/form-data")
+      | !{req.SA.formExtender()}
+      button.btn.btn-basic(type="submit", name="confirm", value="no") #{req.SA.tr("cancel")}
+      if !denied
+        button.btn.btn-danger.ml-3.px-5(type="submit", name="confirm", value="yes") #{req.SA.tr("yes")}
+      else
+        h4.bg-danger.my-3.p-1.text-white= req.SA.tr('deleting_denied')
