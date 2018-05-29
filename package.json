@@ -1,6 +1,6 @@
 {
   "author": "Mikhail Eliseev <me@devdsp.com>",
-  "name": "sequelize-admin",
+  "name": "sequelize-admin-panel",
   "description": "Admin panel for sequelize ORM",
   "keywords": ["admin", "sequelize", "orm", "django"],
   "version": "1.0.0",
