@@ -58,7 +58,7 @@ node node_modules/.bin/sequelize db:create
 ```js
 const express = require('express')
 const db = require('./models')
-const { sequelizeAdmin } = require('./sequelize-admin')
+const { sequelizeAdmin } = require('sequelize-admin')
 const app = express()
 app.use('/admin', sequelizeAdmin(express, db.sequelize))
 app.listen(process.env.PORT || 3000, () => console.log('Server started'))
@@ -68,7 +68,7 @@ app.listen(process.env.PORT || 3000, () => console.log('Server started'))
 
 ```js
 const db = require('./models')
-require('./sequelize-admin').cli(db.sequelize)
+require('sequelize-admin').cli(db.sequelize)
 ```
 
 обратите внимание, такая форма запуска работает потому что созданный по умолчанию файл ./models подключает все модели. Если вы не используете `sequelize-cli`, убедитесь что нужные модели импортированы (вызван Sequelize.define).
@@ -121,7 +121,7 @@ node ./cli init --all # очистит все данные!
 `MyModelAdmin.js`:
 
 ```js
-const { ModelAdmin } = require('./sequelize-admin')
+const { ModelAdmin } = require('sequelize-admin')
 
 class MyModelAdmin extends ModelAdmin {
   repr(req, entry) {
@@ -529,3 +529,4 @@ node cli createsuperuser логин пароль
 * подразумевается что `primary key` является числовым
 * работа c `paranoid option` не проверялась
 * для парсинга форм используется `formidable`, желательно использовать `enctype="multipart/form-data"`. Настройки парсера можно передать в свойстве `formidableOpts` третьего параметра sequelizeAdmin
+* требуется NodeJS не ниже 6 версии, проверялось на 6.14

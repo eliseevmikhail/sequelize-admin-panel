@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "initdb": "rm -rf ./demo.sqlite; node cli init --all; node populateDB",
-    "start": "nodemon -w ../ -w ."
+    "start": "node ."
   },
   "dependencies": {
     "express": "^4.16.3",
