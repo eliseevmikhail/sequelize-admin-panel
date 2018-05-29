@@ -43,7 +43,7 @@ yarn install && cd demo && yarn install && yarn initdb && yarn start
 ```sh
 mkdir sequelize-admin-demo; cd sequelize-admin-demo
 yarn init
-yarn add express sequelize sequelize-cli
+yarn add express sequelize sequelize-cli sequelize-admin-panel
 yarn add mysql2 # или другой адаптер
 node node_modules/.bin/sequelize init
 ```
