@@ -1,0 +1,181 @@
+{
+  "en": {
+    "ui": {
+      "site_title": "Sequelize admin panel",
+      "back": "Back",
+      "apply": "Apply",
+      "save": "Save",
+      "search": "Search",
+      "do_you_want_to_delete": "Do you want to delete this entries?",
+      "deleting_denied": "You have not permissions to delete some of the entries",
+      "waiting_closing_subwindow": "Waiting for the subwindow to close",
+      "no_superuser_warning": "Super user does not exist. Authentification is disabled!",
+      "login_user": "Enter login",
+      "login_password": "Password",
+      "login_button": "Submit",
+      "empty_list": "List is empty",
+      "show all": "show all",
+      "yes": "yes",
+      "no": "no",
+      "cancel": "cancel",
+      "CREATE": "CREATE",
+      "READ": "READ",
+      "UPDATE": "UPDATE",
+      "DELETE": "DELETE",
+      "ALL": "ALL"
+    },
+    "models": {
+      "sequelize_admin_user": {
+        "label": "administrator",
+        "plural": "administrators",
+        "hint": "internal table",
+        "fields": {
+          "password_hint": "4-20 symbols"
+        }
+      },
+      "actions": {
+        "label": "product",
+        "plural": "products",
+        "hint": "actions example",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "name": "",
+          "name_hint": "",
+          "count": "",
+          "count_hint": "",
+          "state": "",
+          "state_hint": "",
+          "createdAt": "",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": ""
+        }
+      },
+      "customViews": {
+        "label": "map with smile",
+        "plural": "maps with smile",
+        "hint": "custom views and widgets example",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "position": "",
+          "position_hint": "",
+          "color": "",
+          "color_hint": "",
+          "smile": "",
+          "smile_hint": "",
+          "createdAt": "",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": ""
+        }
+      },
+      "fakeTable": {
+        "label": "chart",
+        "plural": "chart",
+        "hint": "modelListRenderer and entryRenderer example",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "createdAt": "",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": ""
+        }
+      },
+      "globalOverrides": {
+        "label": "file",
+        "plural": "files",
+        "hint": "global type overriding example",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "name": "",
+          "name_hint": "",
+          "file": "",
+          "file_hint": "",
+          "createdAt": "",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": ""
+        }
+      },
+      "WorkerProject": {
+        "label": "",
+        "plural": "",
+        "hint": "",
+        "fields": {
+          "createdAt": "",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": ""
+        }
+      },
+      "Manager": {
+        "label": "",
+        "plural": "",
+        "hint": "relations example: hasOne, hasMany",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "name": "",
+          "name_hint": "",
+          "createdAt": "",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": "",
+          "Workers": "",
+          "Workers_hint": "",
+          "Project": "",
+          "Project_hint": ""
+        }
+      },
+      "Project": {
+        "label": "",
+        "plural": "",
+        "hint": "relations example: belongsTo, belongsToMany",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "name": "",
+          "name_hint": "",
+          "createdAt": "",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": "",
+          "Workers": "",
+          "Workers_hint": "",
+          "Manager": "",
+          "Manager_hint": ""
+        }
+      },
+      "Worker": {
+        "label": "",
+        "plural": "",
+        "hint": "relations example: belongsTo, belongsToMany",
+        "fields": {
+          "id": "",
+          "id_hint": "",
+          "name": "",
+          "name_hint": "",
+          "createdAt": "",
+          "createdAt_hint": "",
+          "updatedAt": "",
+          "updatedAt_hint": "",
+          "Projects": "",
+          "Projects_hint": "",
+          "Manager": "",
+          "Manager_hint": ""
+        }
+      }
+    },
+    "actions": {
+      "delete": "Delete",
+      "zerofy_count": "zerofy count",
+      "randomize_count": "randomize count",
+      "uppercase_name": "uppercase name",
+      "toggle_state": "toggle state"
+    }
+  }
+}

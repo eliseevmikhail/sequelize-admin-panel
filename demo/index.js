@@ -18,7 +18,11 @@ app.use(
   '/admin',
   sequelizeAdmin(express, db.sequelize, {
     models,
-    translation: Object.assign({}, require('./translations/ru'))
+    translation: Object.assign(
+      {},
+      require('./translations/en'),
+      require('./translations/ru')
+    )
   })
 )
 

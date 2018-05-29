@@ -37,7 +37,7 @@ function trModelFactory(req, translation) {
           modelAdmin.name,
           type
         ])
-        if (defTr != undefined) ret[type] = defTr
+        if (defTr) ret[type] = defTr
       } else ret[type] = userTr[type]
     })
     return ret
@@ -63,7 +63,7 @@ function trFieldFactory(req, translation) {
         'fields',
         fieldName
       ])
-    return str !== undefined ? str : def !== undefined ? def : fieldName
+    return str ? str : def !== undefined ? def : fieldName
   }
 }
 
