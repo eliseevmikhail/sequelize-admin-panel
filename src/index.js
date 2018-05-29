@@ -1,4 +1,4 @@
-/** @module sequelize-admin */
+/** @module sequelize-admin-panel */
 /* eslint no-console: 0 */
 const ModelAdmin = require('./ModelAdmin')
 const modelList = require('./controllers/models')
@@ -17,7 +17,7 @@ String.prototype.capitalize = function() {
  * @param {Express} express Express
  * @param {Sequelize.Instance} sequelizeInstance - db connection
  * @param {Object} [{ models, translation }] options
- * @returns {Function} sequelize-admin middleware
+ * @returns {Function} sequelize-admin-panel middleware
  */
 function sequelizeAdmin(
   express,
