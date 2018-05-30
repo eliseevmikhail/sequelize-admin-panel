@@ -388,7 +388,6 @@ class ModelAdmin {
     }
   }
 
-
   genSequelizeQueryOrderClause() {
     const query = {}
     if (this.ordering.length) {
@@ -518,31 +517,29 @@ class ModelAdmin {
             repr => req.SA.trModel(this) + ' • ' + repr
           ),
       fields: Promise.all(
-        this.editor_fields
-          .filter(fieldName => this.fieldProps[fieldName].editable)
-          .map(fieldName =>
-            Promise.resolve(
-              this.getFieldValue(req, entry, fieldName, !!validationError)
-            ).then(value =>
-              promiseAllProps({
-                label: req.SA.trField(this.name, fieldName),
-                widget: this.fieldProps[fieldName].widget(
-                  req,
-                  entry,
-                  fieldName,
-                  value,
-                  {
-                    readOnly: this.fieldProps[fieldName].readOnly
-                  }
-                ),
-                targetModel: !this.fieldProps[fieldName].isAttribute
-                  ? getAssociations(req, entry, fieldName).targetModelAdmin.name
-                  : null,
-                name: fieldName,
-                errors: validationError ? validationError.get(fieldName) : null
-              })
-            )
+        this.filterFields(f => f.editable).map(fieldName =>
+          Promise.resolve(
+            this.getFieldValue(req, entry, fieldName, !!validationError)
+          ).then(value =>
+            promiseAllProps({
+              label: req.SA.trField(this.name, fieldName),
+              widget: this.fieldProps[fieldName].widget(
+                req,
+                entry,
+                fieldName,
+                value,
+                {
+                  readOnly: this.fieldProps[fieldName].readOnly
+                }
+              ),
+              targetModel: !this.fieldProps[fieldName].isAttribute
+                ? getAssociations(req, entry, fieldName).targetModelAdmin.name
+                : null,
+              name: fieldName,
+              errors: validationError ? validationError.get(fieldName) : null
+            })
           )
+        )
       )
     })
   }

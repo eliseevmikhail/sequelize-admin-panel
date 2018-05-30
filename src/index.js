@@ -25,17 +25,8 @@ function sequelizeAdmin(
   { models, translation = {}, formidableOpts = {} } = {}
 ) {
   const router = express.Router()
-  // static paths
-  ;[
-    'static',
-    '../node_modules/bootstrap/dist',
-    '../node_modules/jquery/dist',
-    '../node_modules/popper.js/dist',
-    '../node_modules/bootstrap4-datetimepicker/build',
-    '../node_modules/moment/min',
-    '../node_modules/moment-timezone/builds',
-    '../node_modules/open-iconic/font'
-  ].map(lib => router.use('/static', serveStatic(path.join(__dirname, lib))))
+
+  router.use('/static', serveStatic(path.join(__dirname, 'static')))
 
   router.use(require('./middleware/formidable-body-parser')(formidableOpts))
 
