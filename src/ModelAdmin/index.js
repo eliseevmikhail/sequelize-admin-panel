@@ -517,7 +517,12 @@ class ModelAdmin {
             repr => req.SA.trModel(this) + ' • ' + repr
           ),
       fields: Promise.all(
-        this.filterFields(f => f.editable).map(fieldName =>
+        (this.editor_fields
+          ? this.editor_fields.filter(
+              fieldName => this.fieldProps[fieldName].editable
+            )
+          : this.filterFields(f => f.editable)
+        ).map(fieldName =>
           Promise.resolve(
             this.getFieldValue(req, entry, fieldName, !!validationError)
           ).then(value =>
