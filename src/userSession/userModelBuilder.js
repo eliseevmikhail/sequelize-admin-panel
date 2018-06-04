@@ -38,7 +38,8 @@ function userModelBuilder(sequelizeInstance) {
           len: [4,20]
         },
         set(password) {
-          this.setDataValue('password', password)
+          // if has new pass, validate it, else use fake validation
+          this.setDataValue('password', password === '' ? '******' : password)
           if (password) this.setDataValue('password_hash', passwordHash.generate(password))
         },
       },
